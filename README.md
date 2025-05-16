@@ -25,7 +25,7 @@ MuJoCo is a free and open-source physics engine designed to facilitate research 
 
 ## Environment Setup
 
-Follow the steps below to configure your environment for the Snapbot project.
+Follow the steps below to configure your environment
 
 ### 1. Create and Activate Conda Environment
 

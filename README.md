@@ -17,11 +17,7 @@ MuJoCo is a free and open-source physics engine designed to facilitate research 
 3. Forward Dynamics
 4. Inverse Kinematics
 5. Inverse Dynamics
-6. Planning with `RRT`
-7. Vision Reasoning with `GPT4o` and Open-Vocab Detection
-8. Motion Retargeting for Unitree `G1`
-9. PID Control for `Snapbot`
-10. Reinforcement Learning with `Soft Actor-Critic` for `Snapbot`
+6. Reinforcement Learning with `Soft Actor-Critic` for `Snapbot`
 
 ## Environment Setup
 

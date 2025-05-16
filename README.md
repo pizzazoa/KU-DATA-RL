@@ -75,12 +75,6 @@ Optimize robotic motion using reinforcement learning. Train and evaluate control
 * One-page A4 result report (must include reward definitions and model hyperparameters)
 * Video of trained Snapbot performance
 
-### Learning Outcomes
-
-* Practical reinforcement learning experience
-* Proficiency in task-specific reward design and evaluation
-* Understanding neural network adjustments based on robot degrees of freedom
-
 Aim to design the best policy and win the Snapbot Olympics!
 
 ---

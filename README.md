@@ -23,6 +23,26 @@ MuJoCo is a free and open-source physics engine designed to facilitate research 
 9. PID Control for `Snapbot`
 10. Reinforcement Learning with `Soft Actor-Critic` for `Snapbot`
 
+## Environment Setup
+
+Follow the steps below to configure your environment for the Snapbot project.
+
+### 1. Create and Activate Conda Environment
+
+Create a new conda environment and activate it:
+
+```bash
+conda create -n snapbot-env python=3.10
+conda activate snapbot-env
+```
+
+### 2. Install Dependencies
+Install all required packages from the provided requirements.txt file:
+
+```bash
+pip install -r requirements.txt
+```
+
 ---
 
 ## Project: Snapbot Olympics

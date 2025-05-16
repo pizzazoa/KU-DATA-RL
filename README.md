@@ -60,7 +60,7 @@ Optimize robotic motion using reinforcement learning. Train and evaluate control
 ### Provided Resources
 
 * Snapbot robot model (`XML`)
-* SAC algorithm implementation (`notebook/6_sac_snapbot_train.ipynb`, `notebook/6_sac_snapbot_eval.ipynb`, `pakage/gym/snapbot_env.py`, `pakage/rl/sac.py`)
+* SAC algorithm implementation (`notebook/06_sac_snapbot_train.ipynb`, `notebook/06_sac_snapbot_eval.ipynb`, `pakage/gym/snapbot_env.py`, `pakage/rl/sac.py`)
 * *(Reward functions must be designed by students)*
 
 ### Tasks

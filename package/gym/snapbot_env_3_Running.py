@@ -107,7 +107,7 @@ class SnapbotGymClass():
         
     def step(self,a,max_time=np.inf):
         """
-            Step forward
+            Step running sideway
         """
         # Increse tick
         self.tick = self.tick + 1
@@ -132,15 +132,15 @@ class SnapbotGymClass():
         else:
             d = False
         
-        # Compute forward reward
-        x_diff = p_torso_curr[0] - p_torso_prev[0] # x-directional displacement
-        r_forward = x_diff/self.dt
+        # Compute running sideway reward
+        y_diff = p_torso_curr[1] - p_torso_prev[1] # y-directional displacement
+        r_sideway = y_diff/self.dt
         
         # Check self-collision (excluding 'floor')
         p_contacts,f_contacts,geom1s,geom2s,_,_ = self.env.get_contact_info(must_exclude_prefix='floor')
         if len(geom1s) > 0: # self-collision occurred
             SELF_COLLISION = 1
-            r_collision    = -10.0
+            r_collision    = -20.0
         else:
             SELF_COLLISION = 0
             r_collision    = 0.0
@@ -152,17 +152,17 @@ class SnapbotGymClass():
             r_survive = 0.01
         
         # Heading reward
-        heading_vec = R_torso_curr[:,0] # x direction
-        r_heading = 0.01*np.dot(heading_vec,np.array([1,0,0]))
+        heading_vec = R_torso_curr[:,1] # y direction
+        r_heading = 0.02*np.dot(heading_vec,np.array([0,1,0]))
         if r_heading < 0.0:
             r_heading = r_heading*100.0 # focus more on penalizing going wrong direction
             
         # Lane keeping
-        lane_deviation = p_torso_curr[1] # y-directional displacement
-        r_lane = -np.abs(lane_deviation)*0.5
+        lane_deviation = p_torso_curr[0] # x-directional displacement
+        r_lane = -np.abs(lane_deviation)*1.0
         
         # Compute reward
-        r = np.array(r_forward+r_collision+r_survive+r_heading+r_lane)
+        r = np.array(r_sideway+r_collision+r_survive+r_heading+r_lane)
         
         # Accumulate state history (update 'state_history')
         self.accumulate_state_history()
@@ -172,8 +172,8 @@ class SnapbotGymClass():
         
         # Other information
         info = {'yaw_torso_deg_prev':yaw_torso_deg_prev,'yaw_torso_deg_curr':yaw_torso_deg_curr,
-                'x_diff':x_diff,'SELF_COLLISION':SELF_COLLISION,
-                'r_forward':r_forward,'r_collision':r_collision,'r_survive':r_survive,
+                'y_diff':y_diff,'SELF_COLLISION':SELF_COLLISION,
+                'r_sideway':r_sideway,'r_collision':r_collision,'r_survive':r_survive,
                 'r_heading':r_heading,'r_lane':r_lane}
         
         # Return

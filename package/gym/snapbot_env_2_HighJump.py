@@ -107,10 +107,18 @@ class SnapbotGymClass():
         
     def step(self,a,max_time=np.inf):
         """
-            Step forward
+            Step High Jump
         """
         # Increse tick
         self.tick = self.tick + 1
+        
+        # 1틱에서 초기화
+        if self.tick == 1:
+            self.phase = "preparation"
+            self.max_height = 0.0
+            self.jump_start_time = 1
+            self.landing_detected = False
+            self.jump_attempted = False
         
         # Previous torso position and yaw angle in degree
         p_torso_prev       = self.env.get_p_body('torso')
@@ -125,44 +133,108 @@ class SnapbotGymClass():
         R_torso_curr       = self.env.get_R_body('torso')
         yaw_torso_deg_curr = np.degrees(r2rpy(R_torso_curr)[2])
         
-        # Compute the done signal
-        ROLLOVER = (np.dot(R_torso_curr[:,2],np.array([0,0,1]))<0.0)
-        if (self.get_sim_time() >= max_time) or ROLLOVER:
+        # 최대 높이 갱신
+        if p_torso_curr[2] > self.max_height:
+            self.max_height = p_torso_curr[2]
+        
+        # landing 확인
+        contact_info = np.zeros(self.env.n_sensor)
+        contact_idxs = np.where(self.env.get_sensor_values(sensor_names=self.env.sensor_names) > 0.2)[0]
+        contact_info[contact_idxs] = 1.0 # 1 means contact occurred
+        is_landed = np.sum(contact_info[0:4]) >= 2
+        
+        # Phase
+        if self.phase == "preparation":
+            if p_torso_curr[2] > 0.15:
+                self.phase = "jumping"
+                self.jump_start_time = self.tick
+                self.jump_attempted = True
+            elif self.tick > 50:
+                self.phase = "failed"
+                
+        elif self.phase == "jumping" and is_landed:
+            self.phase = "landing"
+            self.landing_detected = True
+                
+        elif self.phase == "landing" and is_landed:
+            self.phase = "completed"
+        
+        # Compute done signal
+        ROLLOVER = (np.dot(R_torso_curr[:,2],np.array([0,0,1]))<0.5)
+        if (self.get_sim_time() >= max_time) or ROLLOVER or (self.phase == "completed"):
             d = True
         else:
             d = False
         
-        # Compute forward reward
-        x_diff = p_torso_curr[0] - p_torso_prev[0] # x-directional displacement
-        r_forward = x_diff/self.dt
+        # 초기화
+        z_diff = p_torso_curr[2] - 0.1
+        r_height = 0.0
+        heading_vec = R_torso_curr[:,2] # z direction
+        z_alignment = np.dot(heading_vec,np.array([0,0,1]))
+        
+        # 준비 단계 보상
+        if self.phase == "preparation":
+            if is_landed and self.tick > 15:
+                r_preparation = 0.01
+            else:
+                r_preparation = 0.0
+            if self.tick - self.jump_start_time > 45:
+                r_preparation = -0.05
+        else:
+            r_preparation = 0.0
+        
+        # 점핑 단계 보상
+        if self.phase == "jumping":
+            # 점프 높이 보상
+            r_height = z_diff * 1.5
+            # 최고 높이 갱신 보상
+            if p_torso_curr[2] == self.max_height:
+                r_height += 0.2
+            # 자세 보상
+            if z_alignment > 0.7:
+                r_heading = 0.1 * z_alignment
+            else:
+                r_heading = -0.05
+        else:
+            r_heading = 0.0
+        
+        # 착지 보상
+        if self.phase == "landing":
+            if is_landed and z_alignment > 0.6:
+                r_landing = 1.0
+            elif is_landed:
+                r_landing = 0.2
+            else:
+                r_landing = -0.2
+        else:
+            r_landing = 0.0
+
+        # 완료 보상
+        if self.phase == "completed":
+            r_completion = 2.0
+        else:
+            r_completion = 0.0
         
         # Check self-collision (excluding 'floor')
         p_contacts,f_contacts,geom1s,geom2s,_,_ = self.env.get_contact_info(must_exclude_prefix='floor')
         if len(geom1s) > 0: # self-collision occurred
             SELF_COLLISION = 1
-            r_collision    = -10.0
+            r_collision    = -0.1
         else:
             SELF_COLLISION = 0
             r_collision    = 0.0
-            
-        # Survival reward
-        if ROLLOVER:
-            r_survive = -10.0
-        else:
-            r_survive = 0.01
         
-        # Heading reward
-        heading_vec = R_torso_curr[:,0] # x direction
-        r_heading = 0.01*np.dot(heading_vec,np.array([1,0,0]))
-        if r_heading < 0.0:
-            r_heading = r_heading*100.0 # focus more on penalizing going wrong direction
-            
-        # Lane keeping
-        lane_deviation = p_torso_curr[1] # y-directional displacement
-        r_lane = -np.abs(lane_deviation)*0.5
+        # Survival reward
+        if not ROLLOVER:
+            if self.jump_attempted:
+                r_survive = 0.02
+            else:
+                r_survive = 0.0
+        else:
+            r_survive = -0.5
         
         # Compute reward
-        r = np.array(r_forward+r_collision+r_survive+r_heading+r_lane)
+        r = np.array(r_height+r_preparation+r_heading+r_landing+r_collision+r_survive+r_completion)
         
         # Accumulate state history (update 'state_history')
         self.accumulate_state_history()
@@ -172,9 +244,9 @@ class SnapbotGymClass():
         
         # Other information
         info = {'yaw_torso_deg_prev':yaw_torso_deg_prev,'yaw_torso_deg_curr':yaw_torso_deg_curr,
-                'x_diff':x_diff,'SELF_COLLISION':SELF_COLLISION,
-                'r_forward':r_forward,'r_collision':r_collision,'r_survive':r_survive,
-                'r_heading':r_heading,'r_lane':r_lane}
+                'z_diff':z_diff,'SELF_COLLISION':SELF_COLLISION,
+                'r_height':r_height,'r_collision':r_collision,'r_survive':r_survive,
+                'r_heading':r_heading,'max_height':self.max_height}
         
         # Return
         return o_prime,r,d,info

@@ -116,7 +116,6 @@ class SnapbotGymClass():
         if self.tick == 1:
             self.phase = "preparation"
             self.max_height = 0.0
-            self.jump_start_time = 1
             self.landing_detected = False
             self.jump_attempted = False
         
@@ -147,7 +146,6 @@ class SnapbotGymClass():
         if self.phase == "preparation":
             if p_torso_curr[2] > 0.15:
                 self.phase = "jumping"
-                self.jump_start_time = self.tick
                 self.jump_attempted = True
             elif self.tick > 50:
                 self.phase = "failed"
@@ -178,7 +176,7 @@ class SnapbotGymClass():
                 r_preparation = 0.01
             else:
                 r_preparation = 0.0
-            if self.tick - self.jump_start_time > 45:
+            if self.tick > 45:
                 r_preparation = -0.05
         else:
             r_preparation = 0.0

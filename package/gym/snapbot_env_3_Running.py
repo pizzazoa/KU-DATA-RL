@@ -131,16 +131,20 @@ class SnapbotGymClass():
             d = True
         else:
             d = False
+
+        if self.tick == 1:
+            self.y_position = p_torso_curr[1]
         
         # Compute running sideway reward
         y_diff = p_torso_curr[1] - p_torso_prev[1] # y-directional displacement
         r_sideway = y_diff/self.dt
+        r_distance = (p_torso_curr[1] - self.y_position)*5.0
         
         # Check self-collision (excluding 'floor')
         p_contacts,f_contacts,geom1s,geom2s,_,_ = self.env.get_contact_info(must_exclude_prefix='floor')
         if len(geom1s) > 0: # self-collision occurred
             SELF_COLLISION = 1
-            r_collision    = -20.0
+            r_collision    = -25.0
         else:
             SELF_COLLISION = 0
             r_collision    = 0.0

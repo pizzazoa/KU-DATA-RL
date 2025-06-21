@@ -193,7 +193,7 @@ class SnapbotGymClass():
         # 점핑 단계 보상
         if self.phase == "jumping":
             # 점프 높이 보상
-            r_height = z_diff * 1.5
+            r_height = z_diff * 1.2
             # 점프 거리 보상
             r_forward = x_vel * 1.5
             # 최고 거리 갱신 보상
